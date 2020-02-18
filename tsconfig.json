@@ -9,6 +9,6 @@
     "strict": true,
     "target": "es6"
   },
-  "include": ["src", "**/tests/**/*.ts"],
+  "include": ["src"],
   "exclude": ["lib", "node_modules"]
 }
