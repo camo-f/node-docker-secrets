@@ -1,0 +1,49 @@
+{
+  "name": "node-docker-secrets",
+  "version": "1.0.0",
+  "description": "Read Docker secrets from environment variables",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "test": "jest --config jestconfig.json",
+    "test:cov": "jest --config jestconfig.json --coverage",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src/**",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/camo-f/node-docker-secrets.git"
+  },
+  "keywords": [
+    "docker",
+    "swarm",
+    "secret",
+    "secrets"
+  ],
+  "author": "camo-f",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/camo-f/node-docker-secrets/issues"
+  },
+  "homepage": "https://github.com/camo-f/node-docker-secrets#readme",
+  "devDependencies": {
+    "@types/jest": "^25.1.2",
+    "@types/node": "^13.7.1",
+    "@typescript-eslint/eslint-plugin": "^2.19.2",
+    "@typescript-eslint/parser": "^2.19.2",
+    "eslint": "^6.8.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "jest": "^25.1.0",
+    "prettier": "^1.19.1",
+    "ts-jest": "^25.2.0",
+    "typescript": "^3.7.5"
+  },
+  "files": [
+    "lib/**/*"
+  ]
+}
