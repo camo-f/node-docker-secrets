@@ -1,6 +1,6 @@
 import { promises as Fs } from 'fs'; // TODO: improve as https://github.com/nodejs/node/issues/21014 is solved or update to Node 13
 
-type DockerSecretsMap = Map<string, string>;
+export type DockerSecretsMap = Map<string, string>;
 
 export async function build(
   keys: string[] | Map<string, string> | Set<string>,
