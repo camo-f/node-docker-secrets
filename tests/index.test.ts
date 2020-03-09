@@ -4,6 +4,7 @@ beforeAll(function() {
   process.env.SECRET1_PATH = `${__dirname}/resources/secret1`;
   process.env.SECRET2_PATH = `${__dirname}/resources/secret2`;
   process.env.SECRET3_PATH = `${__dirname}/resources/secret3`;
+  process.env.SECRET_ONLY_IN_ENV = 'secret4';
 });
 
 describe('Build errors', function() {
@@ -111,6 +112,7 @@ describe('Build with Map', function() {
         ['SECRET1', 'SECRET1_PATH'],
         ['SECRET2', 'SECRET2_PATH'],
         ['SECRET3', 'SECRET3_PATH'],
+        ['SECRET_ONLY_IN_ENV', 'SECRET_ONLY_IN_ENV_PATH'],
         ['MISSING_KEY', 'MISSING_KEY_PATH'],
       ]),
     );
@@ -124,6 +126,30 @@ describe('Build with Map', function() {
     expect(secretsList).toContain('SECRET1');
     expect(secretsList).toContain('SECRET2');
     expect(secretsList).toContain('SECRET3');
+  });
+
+  it('should be fulfilled when new Map with a missing key is provided and secret is set in env', async function() {
+    const secrets = await build(
+      new Map([
+        ['SECRET1', 'SECRET1_PATH'],
+        ['SECRET2', 'SECRET2_PATH'],
+        ['SECRET3', 'SECRET3_PATH'],
+        ['SECRET_ONLY_IN_ENV', 'SECRET_ONLY_IN_ENV_PATH'],
+        ['MISSING_KEY', 'MISSING_KEY_PATH'],
+      ]), true
+    );
+    expect(secrets.size).toEqual(4);
+    expect(await getSecret(secrets, 'SECRET1')).toEqual('');
+    expect(await getSecret(secrets, 'SECRET2')).toEqual('secret2');
+    expect(await getSecret(secrets, 'SECRET3')).toEqual('secret3');
+    expect(await getSecret(secrets, 'SECRET_ONLY_IN_ENV')).toEqual('secret4');
+    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
+    const secretsList = await listSecrets(secrets);
+    expect(secretsList).toHaveLength(4);
+    expect(secretsList).toContain('SECRET1');
+    expect(secretsList).toContain('SECRET2');
+    expect(secretsList).toContain('SECRET3');
+    expect(secretsList).toContain('SECRET_ONLY_IN_ENV');
   });
 
   it('should be fulfilled when new Map with only missing keys are provided', async function() {
@@ -179,7 +205,7 @@ describe('Build with Set', function() {
     expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
     expect(await getSecret(secrets, 'SECRET2_PATH')).toEqual('secret2');
     expect(await getSecret(secrets, 'SECRET3_PATH')).toEqual('secret3');
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH2')).rejects.toThrow();
+    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1_PATH');

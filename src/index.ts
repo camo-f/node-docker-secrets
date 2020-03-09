@@ -4,6 +4,7 @@ export type DockerSecretsMap = Map<string, string>;
 
 export async function build(
   keys: string[] | Map<string, string> | Set<string>,
+  allowSecretsFromEnv = false,
 ): Promise<DockerSecretsMap> {
   let map: DockerSecretsMap;
   if (keys instanceof Array && keys.length > 0) {
@@ -19,9 +20,18 @@ export async function build(
   await Promise.all(
     Array.from(map).map(async secretKeyName => {
       try {
-        const secret = await readFromEnv(secretKeyName[1]);
+        const secret = await readFileFromEnv(secretKeyName[1]);
         secrets.set(secretKeyName[0], secret);
       } catch (error) {
+        // Fallback to env var if allowed
+        if (allowSecretsFromEnv === true) {
+          try {
+            const secret = await readFromEnv(secretKeyName[0]);
+            secrets.set(secretKeyName[0], secret);
+          } catch (error2) {
+            return;
+          }
+        }
         return;
       }
     }),
@@ -51,7 +61,7 @@ export async function listSecrets(
   return Array.from(secrets.keys());
 }
 
-async function readFromEnv(key: string): Promise<string> {
+async function readFileFromEnv(key: string): Promise<string> {
   const path = process.env[key];
   if (!path) {
     throw new Error(`Missing key ${key}`);
@@ -59,4 +69,13 @@ async function readFromEnv(key: string): Promise<string> {
   // Read Docker secret file
   const res = await Fs.readFile(path, 'utf8');
   return res.trim();
+}
+
+async function readFromEnv(key: string): Promise<string> {
+  const secret = process.env[key];
+  if (!secret) {
+    throw new Error(`Missing key ${key}`);
+  }
+
+  return secret;
 }
