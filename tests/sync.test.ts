@@ -1,4 +1,5 @@
-import { build, getSecret, listSecrets } from '../src/index';
+import { buildSync, getSecretSync } from '../src/sync';
+import { listSecrets } from '../src/async';
 
 beforeAll(function() {
   process.env.SECRET1_PATH = `${__dirname}/resources/secret1`;
@@ -8,39 +9,41 @@ beforeAll(function() {
 });
 
 describe('Build errors', function() {
-  it('should be fulfilled when empty array is provided', async function() {
-    await expect(build([])).rejects.toThrow();
+  it('should throw an error when empty array is provided', async function() {
+    expect(() => {
+      buildSync([]);
+    }).toThrow();
   });
 
-  it('should be fulfilled when empty new Map is provided', async function() {
-    await expect(build(new Map())).rejects.toThrow();
+  it('should throw an error when empty new Map is provided', async function() {
+    expect(() => {
+      buildSync(new Map());
+    }).toThrow();
   });
 
-  it('should be fulfilled when empty new Set is provided', async function() {
-    await expect(build(new Set())).rejects.toThrow();
+  it('should throw an error when empty new Set is provided', async function() {
+    expect(() => {
+      buildSync(new Set());
+    }).toThrow();
   });
 });
 
 describe('Build with array', function() {
   it('should be fulfilled when new Array with one element is provided', async function() {
-    const secrets = await build(['SECRET1_PATH']);
+    const secrets = buildSync(['SECRET1_PATH']);
     expect(secrets.size).toEqual(1);
-    expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET1_PATH')).toEqual('');
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(1);
     expect(secretsList).toContain('SECRET1_PATH');
   });
 
   it('should be fulfilled when new Array with multiple elements is provided', async function() {
-    const secrets = await build([
-      'SECRET1_PATH',
-      'SECRET2_PATH',
-      'SECRET3_PATH',
-    ]);
+    const secrets = buildSync(['SECRET1_PATH', 'SECRET2_PATH', 'SECRET3_PATH']);
     expect(secrets.size).toEqual(3);
-    expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2_PATH')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3_PATH')).toEqual('secret3');
+    expect(getSecretSync(secrets, 'SECRET1_PATH')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2_PATH')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3_PATH')).toEqual('secret3');
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1_PATH');
@@ -49,17 +52,19 @@ describe('Build with array', function() {
   });
 
   it('should be fulfilled when new Array with a missing key is provided', async function() {
-    const secrets = await build([
+    const secrets = buildSync([
       'SECRET1_PATH',
       'SECRET2_PATH',
       'SECRET3_PATH',
-      'MISSING_KEY',
+      'MISSING_KEY_PATH',
     ]);
     expect(secrets.size).toEqual(3);
-    expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2_PATH')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3_PATH')).toEqual('secret3');
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
+    expect(getSecretSync(secrets, 'SECRET1_PATH')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2_PATH')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3_PATH')).toEqual('secret3');
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1_PATH');
@@ -68,10 +73,14 @@ describe('Build with array', function() {
   });
 
   it('should be fulfilled when new Array with only missing keys is provided', async function() {
-    const secrets = await build(['MISSING_KEY', 'MISSING_KEY2']);
+    const secrets = buildSync(['MISSING_KEY_PATH', 'MISSING_KEY2_PATH']);
     expect(secrets.size).toEqual(0);
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH2')).rejects.toThrow();
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH');
+    }).toThrow();
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH2');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(0);
   });
@@ -79,16 +88,16 @@ describe('Build with array', function() {
 
 describe('Build with Map', function() {
   it('should be fulfilled when new Map with one element is provided', async function() {
-    const secrets = await build(new Map([['SECRET1', 'SECRET1_PATH']]));
+    const secrets = buildSync(new Map([['SECRET1', 'SECRET1_PATH']]));
     expect(secrets.size).toEqual(1);
-    expect(await getSecret(secrets, 'SECRET1')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET1')).toEqual('');
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(1);
     expect(secretsList).toContain('SECRET1');
   });
 
   it('should be fulfilled when new Map with multiple elements is provided', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Map([
         ['SECRET1', 'SECRET1_PATH'],
         ['SECRET2', 'SECRET2_PATH'],
@@ -96,9 +105,9 @@ describe('Build with Map', function() {
       ]),
     );
     expect(secrets.size).toEqual(3);
-    expect(await getSecret(secrets, 'SECRET1')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3')).toEqual('secret3');
+    expect(getSecretSync(secrets, 'SECRET1')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3')).toEqual('secret3');
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1');
@@ -107,7 +116,7 @@ describe('Build with Map', function() {
   });
 
   it('should be fulfilled when new Map with a missing key is provided', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Map([
         ['SECRET1', 'SECRET1_PATH'],
         ['SECRET2', 'SECRET2_PATH'],
@@ -117,10 +126,12 @@ describe('Build with Map', function() {
       ]),
     );
     expect(secrets.size).toEqual(3);
-    expect(await getSecret(secrets, 'SECRET1')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3')).toEqual('secret3');
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
+    expect(getSecretSync(secrets, 'SECRET1')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3')).toEqual('secret3');
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1');
@@ -129,21 +140,24 @@ describe('Build with Map', function() {
   });
 
   it('should be fulfilled when new Map with a missing key is provided and secret is set in env', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Map([
         ['SECRET1', 'SECRET1_PATH'],
         ['SECRET2', 'SECRET2_PATH'],
         ['SECRET3', 'SECRET3_PATH'],
         ['SECRET_ONLY_IN_ENV', 'SECRET_ONLY_IN_ENV_PATH'],
         ['MISSING_KEY', 'MISSING_KEY_PATH'],
-      ]), true
+      ]),
+      true,
     );
     expect(secrets.size).toEqual(4);
-    expect(await getSecret(secrets, 'SECRET1')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3')).toEqual('secret3');
-    expect(await getSecret(secrets, 'SECRET_ONLY_IN_ENV')).toEqual('secret4');
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
+    expect(getSecretSync(secrets, 'SECRET1')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3')).toEqual('secret3');
+    expect(getSecretSync(secrets, 'SECRET_ONLY_IN_ENV')).toEqual('secret4');
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(4);
     expect(secretsList).toContain('SECRET1');
@@ -153,15 +167,19 @@ describe('Build with Map', function() {
   });
 
   it('should be fulfilled when new Map with only missing keys are provided', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Map([
         ['MISSING_KEY', 'MISSING_KEY_PATH'],
         ['MISSING_KEY2', 'MISSING_KEY2_PATH'],
       ]),
     );
     expect(secrets.size).toEqual(0);
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH2')).rejects.toThrow();
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY');
+    }).toThrow();
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(0);
   });
@@ -169,22 +187,22 @@ describe('Build with Map', function() {
 
 describe('Build with Set', function() {
   it('should be fulfilled when new Set with one element is provided', async function() {
-    const secrets = await build(new Set(['SECRET1_PATH']));
+    const secrets = buildSync(new Set(['SECRET1_PATH']));
     expect(secrets.size).toEqual(1);
-    expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET1_PATH')).toEqual('');
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(1);
     expect(secretsList).toContain('SECRET1_PATH');
   });
 
   it('should be fulfilled when new Set with multiple elements is provided', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Set(['SECRET1_PATH', 'SECRET2_PATH', 'SECRET3_PATH']),
     );
     expect(secrets.size).toEqual(3);
-    expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2_PATH')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3_PATH')).toEqual('secret3');
+    expect(getSecretSync(secrets, 'SECRET1_PATH')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2_PATH')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3_PATH')).toEqual('secret3');
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1_PATH');
@@ -193,7 +211,7 @@ describe('Build with Set', function() {
   });
 
   it('should be fulfilled when new Set with a missing key is provided', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Set([
         'SECRET1_PATH',
         'SECRET2_PATH',
@@ -202,10 +220,12 @@ describe('Build with Set', function() {
       ]),
     );
     expect(secrets.size).toEqual(3);
-    expect(await getSecret(secrets, 'SECRET1_PATH')).toEqual('');
-    expect(await getSecret(secrets, 'SECRET2_PATH')).toEqual('secret2');
-    expect(await getSecret(secrets, 'SECRET3_PATH')).toEqual('secret3');
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
+    expect(getSecretSync(secrets, 'SECRET1_PATH')).toEqual('');
+    expect(getSecretSync(secrets, 'SECRET2_PATH')).toEqual('secret2');
+    expect(getSecretSync(secrets, 'SECRET3_PATH')).toEqual('secret3');
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(3);
     expect(secretsList).toContain('SECRET1_PATH');
@@ -214,12 +234,16 @@ describe('Build with Set', function() {
   });
 
   it('should be fulfilled when new Set with only missing keys are provided', async function() {
-    const secrets = await build(
+    const secrets = buildSync(
       new Set(['MISSING_KEY_PATH', 'MISSING_KEY_PATH2']),
     );
     expect(secrets.size).toEqual(0);
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH')).rejects.toThrow();
-    await expect(getSecret(secrets, 'MISSING_KEY_PATH2')).rejects.toThrow();
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH');
+    }).toThrow();
+    expect(() => {
+      getSecretSync(secrets, 'MISSING_KEY_PATH2');
+    }).toThrow();
     const secretsList = await listSecrets(secrets);
     expect(secretsList).toHaveLength(0);
   });

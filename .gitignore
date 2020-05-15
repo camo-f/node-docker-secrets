@@ -22,8 +22,5 @@ lib-cov
 coverage
 *.lcov
 
-# TS build
-/lib
-
 # Dependency directories
 node_modules/
